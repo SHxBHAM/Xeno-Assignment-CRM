@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, type ReactNode } from "react"
+import { createContext, useContext, type ReactNode, Suspense } from "react"
 import { useSession, signIn, signOut } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 
@@ -14,7 +14,7 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>({ user: null, isAuthenticated: false, isLoading: true, login: () => {}, logout: () => {} })
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+function AuthProviderContent({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession()
   const searchParams = useSearchParams()
   const isLoading = status === "loading"
@@ -34,6 +34,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
+  )
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  return (
+    <Suspense>
+      <AuthProviderContent>{children}</AuthProviderContent>
+    </Suspense>
   )
 }
 
