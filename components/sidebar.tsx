@@ -49,7 +49,7 @@ export function Sidebar() {
   const { user } = useAuth()
 
   return (
-    <div className="space-y-4 py-4 flex flex-col h-full bg-zinc-900 text-white border-r border-zinc-800 w-[240px] shrink-0">
+    <div className="fixed left-0 top-0 space-y-4 py-4 flex flex-col h-svh bg-zinc-900 text-white border-r border-zinc-800 w-[240px] shrink-0">
       <div className="px-3 py-2 flex-1">
         <Link href="/" className="flex items-center pl-3 mb-8">
           <h1 className="text-2xl font-bold">Xeno CRM</h1>

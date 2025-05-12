@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Sparkles, RefreshCw } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { toast } from "@/hooks/use-toast"
 
 type MessageSuggestion = {
   id: string
@@ -12,9 +13,19 @@ type MessageSuggestion = {
   tone: string
 }
 
+const TONES = [
+  { value: "friendly", label: "Friendly" },
+  { value: "professional", label: "Professional" },
+  { value: "casual", label: "Casual" },
+  { value: "urgent", label: "Urgent" },
+  { value: "formal", label: "Formal" },
+  { value: "enthusiastic", label: "Enthusiastic" },
+]
+
 export function AIMessageSuggestions({ onSelectMessage }: { onSelectMessage: (message: string) => void }) {
   const [isLoading, setIsLoading] = useState(false)
   const [objective, setObjective] = useState("win-back")
+  const [selectedTone, setSelectedTone] = useState("friendly")
   const [suggestions, setSuggestions] = useState<MessageSuggestion[]>([
     {
       id: "1",
@@ -36,81 +47,48 @@ export function AIMessageSuggestions({ onSelectMessage }: { onSelectMessage: (me
     },
   ])
 
-  const generateSuggestions = () => {
+  const generateSuggestions = async () => {
     setIsLoading(true)
-
-    // Simulate API call to AI service
-    setTimeout(() => {
-      const newSuggestions: MessageSuggestion[] = []
-
-      if (objective === "win-back") {
-        newSuggestions.push(
-          {
-            id: "4",
-            content:
-              "Hi {name}, we noticed you haven't shopped with us recently. We've added new items to our collection that match your style. Use code RETURN20 for 20% off!",
-            tone: "personalized",
-          },
-          {
-            id: "5",
-            content:
-              "Hello {name}, it's been a while! We value your business and would love to welcome you back with a special discount of 15% on your next purchase.",
-            tone: "warm",
-          },
-          {
-            id: "6",
-            content:
-              "{name}, we miss you! 😢 Come back and shop with us - we've got a special 10% discount waiting just for you with code MISSYOU10.",
-            tone: "emotional",
-          },
-        )
-      } else if (objective === "promotion") {
-        newSuggestions.push(
-          {
-            id: "4",
-            content:
-              "Hi {name}! Our biggest sale of the season is here! Enjoy up to 50% off on selected items for a limited time only.",
-            tone: "exciting",
-          },
-          {
-            id: "5",
-            content:
-              "Dear {name}, we're excited to announce our Spring Collection is now available with special introductory prices for our valued customers.",
-            tone: "professional",
-          },
-          {
-            id: "6",
-            content:
-              "{name}! 🔥 FLASH SALE ALERT! 24 hours only - get 30% off everything with code FLASH30. Don't miss out!",
-            tone: "urgent",
-          },
-        )
-      } else {
-        newSuggestions.push(
-          {
-            id: "4",
-            content:
-              "Hi {name}, thank you for being a loyal customer! As a token of our appreciation, enjoy a complimentary gift with your next purchase.",
-            tone: "grateful",
-          },
-          {
-            id: "5",
-            content:
-              "Dear {name}, we value your loyalty. To show our appreciation, we're offering you exclusive early access to our new collection before anyone else.",
-            tone: "exclusive",
-          },
-          {
-            id: "6",
-            content:
-              "{name}, you're one of our VIPs! 🌟 Enjoy a special 20% discount on your next order as a thank you for your continued support.",
-            tone: "celebratory",
-          },
-        )
+    try {
+      const contexts = {
+        "win-back": "Customer has not made a purchase in the last 6 months",
+        "promotion": "New seasonal collection launch with special discounts",
+        "loyalty": "Customer has made more than 5 purchases in the last 3 months",
       }
 
+      const responses = await Promise.all([1, 2, 3].map(async () => {
+        const response = await fetch("/api/ai/message", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            objective,
+            tone: selectedTone,
+            context: contexts[objective as keyof typeof contexts],
+          }),
+        })
+
+        if (!response.ok) throw new Error("Failed to generate message")
+        const data = await response.json()
+        return data.message
+      }))
+
+      const newSuggestions = responses.map((content, index) => ({
+        id: `gen-${index + 1}`,
+        content,
+        tone: selectedTone,
+      }))
+
       setSuggestions(newSuggestions)
+    } catch (error) {
+      console.error("Error generating suggestions:", error)
+      toast({
+        title: "Error",
+        description: "Failed to generate message suggestions. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
       setIsLoading(false)
-    }, 1500)
+    }
   }
 
   return (
@@ -126,6 +104,18 @@ export function AIMessageSuggestions({ onSelectMessage }: { onSelectMessage: (me
               <SelectItem value="win-back">Win-back Inactive Users</SelectItem>
               <SelectItem value="promotion">Promote New Products</SelectItem>
               <SelectItem value="loyalty">Reward Loyal Customers</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={selectedTone} onValueChange={setSelectedTone}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TONES.map((tone) => (
+                <SelectItem key={tone.value} value={tone.value}>
+                  {tone.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm" onClick={generateSuggestions} disabled={isLoading}>

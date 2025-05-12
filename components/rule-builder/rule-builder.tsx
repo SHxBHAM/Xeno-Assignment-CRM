@@ -1,72 +1,98 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { PlusCircle, Trash2, Plus } from "lucide-react"
+import { PlusCircle, Trash2, Plus, Loader2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 
-type Rule = {
+export type Rule = {
   id: string
   field: string
   operator: string
   value: string
 }
 
-type RuleGroup = {
+export type RuleGroup = {
   id: string
   combinator: "AND" | "OR"
   rules: (Rule | RuleGroup)[]
 }
 
-export function RuleBuilder({ onUpdate }: { onUpdate: (size: number) => void }) {
-  const [rootGroup, setRootGroup] = useState<RuleGroup>({
-    id: "root",
-    combinator: "AND",
-    rules: [
-      {
-        id: "rule1",
-        field: "spend",
-        operator: ">",
-        value: "10000",
-      },
-    ],
+export function RuleBuilder({ 
+  onUpdate, 
+  onRuleChange,
+  initialRules 
+}: { 
+  onUpdate: (size: number) => void
+  onRuleChange?: (rule: RuleGroup) => void
+  initialRules?: RuleGroup | null
+}) {
+  const [isLoading, setIsLoading] = useState(false)
+  
+  console.log("RuleBuilder rendered with initialRules:", initialRules)
+  
+  const [rootGroup, setRootGroup] = useState<RuleGroup>(() => {
+    console.log("Initializing rootGroup with:", initialRules)
+    if (initialRules) {
+      return initialRules
+    }
+    return {
+      id: "root",
+      combinator: "AND",
+      rules: [
+        {
+          id: "rule-1",
+          field: "spend",
+          operator: ">",
+          value: "1000",
+        },
+      ],
+    }
   })
 
-  // Simulate audience calculation
-  const calculateAudience = (group: RuleGroup) => {
-    // In a real app, this would make an API call to calculate the audience size
-    // For now, we'll just generate a random number
-    const baseSize = 10000
-    const ruleCount = countRules(group)
-    const randomFactor = Math.random() * 0.5 + 0.5 // 0.5 to 1.0
+  // Update rootGroup when initialRules changes
+  useEffect(() => {
+    console.log("initialRules changed to:", initialRules)
+    if (initialRules) {
+      console.log("Updating rootGroup with new initialRules")
+      setRootGroup(initialRules)
+      updateAudienceSize()
+    }
+  }, [initialRules])
 
-    const size = Math.floor(baseSize / (ruleCount * randomFactor))
-    onUpdate(size)
+  // For now, using a hardcoded value. This will be replaced with actual API call later
+  const updateAudienceSize = async () => {
+    try {
+      setIsLoading(true)
+      await new Promise(resolve => setTimeout(resolve, 500))
+      onUpdate(50000)
+    } catch (error) {
+      console.error('Error calculating audience size:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const countRules = (group: RuleGroup): number => {
-    return group.rules.reduce((count, rule) => {
-      if ("combinator" in rule) {
-        return count + countRules(rule)
-      }
-      return count + 1
-    }, 0)
+  const updateRootGroup = (newGroup: RuleGroup) => {
+    console.log("Updating root group to:", newGroup)
+    setRootGroup(newGroup)
+    updateAudienceSize()
+    onRuleChange?.(newGroup)
   }
 
   const addRule = (groupId: string) => {
     const newRule: Rule = {
       id: `rule-${Date.now()}`,
-      field: "visits",
-      operator: "<",
-      value: "3",
+      field: "spend",
+      operator: ">",
+      value: "1000",
     }
 
     const updatedGroup = addRuleToGroup(rootGroup, groupId, newRule)
-    setRootGroup(updatedGroup)
-    calculateAudience(updatedGroup)
+    updateRootGroup(updatedGroup)
   }
 
   const addGroup = (parentId: string) => {
@@ -84,8 +110,7 @@ export function RuleBuilder({ onUpdate }: { onUpdate: (size: number) => void }) 
     }
 
     const updatedGroup = addRuleToGroup(rootGroup, parentId, newGroup)
-    setRootGroup(updatedGroup)
-    calculateAudience(updatedGroup)
+    updateRootGroup(updatedGroup)
   }
 
   const addRuleToGroup = (group: RuleGroup, targetId: string, newRule: Rule | RuleGroup): RuleGroup => {
@@ -109,8 +134,7 @@ export function RuleBuilder({ onUpdate }: { onUpdate: (size: number) => void }) 
 
   const updateRule = (ruleId: string, field: string, value: string) => {
     const updatedGroup = updateRuleInGroup(rootGroup, ruleId, field, value)
-    setRootGroup(updatedGroup)
-    calculateAudience(updatedGroup)
+    updateRootGroup(updatedGroup)
   }
 
   const updateRuleInGroup = (group: RuleGroup, ruleId: string, field: string, value: string): RuleGroup => {
@@ -135,8 +159,7 @@ export function RuleBuilder({ onUpdate }: { onUpdate: (size: number) => void }) 
 
   const removeRule = (ruleId: string) => {
     const updatedGroup = removeRuleFromGroup(rootGroup, ruleId)
-    setRootGroup(updatedGroup)
-    calculateAudience(updatedGroup)
+    updateRootGroup(updatedGroup)
   }
 
   const removeRuleFromGroup = (group: RuleGroup, ruleId: string): RuleGroup => {
@@ -150,28 +173,47 @@ export function RuleBuilder({ onUpdate }: { onUpdate: (size: number) => void }) 
       return group
     }
 
-    return {
-      ...group,
-      rules: group.rules
-        .filter((rule) => {
-          if ("combinator" in rule) {
-            return true
-          }
-          return rule.id !== ruleId
-        })
-        .map((rule) => {
+    // First, check if the rule to remove is in this group
+    const updatedRules = group.rules.filter((rule) => {
+      // Keep the rule if it's not the one we're looking for
+      if (rule.id !== ruleId) {
+        return true
+      }
+      // If it's a group or a rule, remove it if the ID matches
+      return false
+    })
+
+    // If no rules were removed at this level, check nested groups
+    if (updatedRules.length === group.rules.length) {
+      return {
+        ...group,
+        rules: group.rules.map((rule) => {
           if ("combinator" in rule) {
             return removeRuleFromGroup(rule, ruleId)
           }
           return rule
         }),
+      }
+    }
+
+    // If this group would be empty after removal, remove the group itself
+    if (updatedRules.length === 0 && group.id !== "root") {
+      return {
+        ...group,
+        rules: [],
+      }
+    }
+
+    // Return the group with updated rules
+    return {
+      ...group,
+      rules: updatedRules,
     }
   }
 
   const updateCombinator = (groupId: string, value: "AND" | "OR") => {
     const updatedGroup = updateCombinatorInGroup(rootGroup, groupId, value)
-    setRootGroup(updatedGroup)
-    calculateAudience(updatedGroup)
+    updateRootGroup(updatedGroup)
   }
 
   const updateCombinatorInGroup = (group: RuleGroup, groupId: string, value: "AND" | "OR"): RuleGroup => {
@@ -213,6 +255,9 @@ export function RuleBuilder({ onUpdate }: { onUpdate: (size: number) => void }) 
                 <SelectItem value="OR">OR</SelectItem>
               </SelectContent>
             </Select>
+            <Button variant="ghost" size="icon" className="ml-2" onClick={() => removeRule(group.id)}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         )}
 
@@ -273,7 +318,12 @@ export function RuleBuilder({ onUpdate }: { onUpdate: (size: number) => void }) 
                       className="w-[120px]"
                     />
 
-                    <Button variant="ghost" size="icon" onClick={() => removeRule(rule.id)}>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => removeRule(rule.id)}
+                      disabled={isLoading}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -284,12 +334,30 @@ export function RuleBuilder({ onUpdate }: { onUpdate: (size: number) => void }) 
         </div>
 
         <div className="flex gap-2 mt-4">
-          <Button variant="outline" size="sm" onClick={() => addRule(group.id)}>
-            <Plus className="h-4 w-4 mr-1" />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => addRule(group.id)}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4 mr-1" />
+            )}
             Add Rule
           </Button>
-          <Button variant="outline" size="sm" onClick={() => addGroup(group.id)}>
-            <PlusCircle className="h-4 w-4 mr-1" />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => addGroup(group.id)}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <PlusCircle className="h-4 w-4 mr-1" />
+            )}
             Add Group
           </Button>
         </div>
