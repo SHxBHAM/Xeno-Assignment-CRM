@@ -1,14 +1,18 @@
+import { CampaignStatus } from "@prisma/client"
 import prisma from "@/lib/prisma"
 
-const STATUS_COLORS = {
-  DRAFT: "#e5e7eb",      // Gray 200
-  SENDING: "#f9fafb",    // Gray 50
-  COMPLETED: "#ffffff",  // White
-  FAILED: "#d1d5db",     // Gray 300
-  PROCESSING: "#f3f4f6"  // Gray 100
+type CampaignStatusCount = {
+  name: CampaignStatus
+  value: number
+  color: string
 }
 
-export async function getCampaignStatusData() {
+const STATUS_COLORS: Record<CampaignStatus, string> = {
+  PROCESSING: "#3b82f6",  // Blue 500 - Active processing
+  COMPLETED: "#1d4ed8",   // Blue 700 - Completed
+}
+
+export async function getCampaignStatusData(): Promise<CampaignStatusCount[]> {
   const campaigns = await prisma.campaign.groupBy({
     by: ['status'],
     _count: {

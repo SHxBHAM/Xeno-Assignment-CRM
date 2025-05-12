@@ -2,7 +2,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "./generated/client"
 }
 
 datasource db {
@@ -56,11 +55,8 @@ model Item {
 }
 
 enum CampaignStatus {
-  DRAFT
   PROCESSING
-  SENDING
   COMPLETED
-  FAILED
 }
 
 enum CommunicationStatus {
@@ -86,7 +82,7 @@ model Campaign {
   id              String         @id @default(uuid()) @db.Uuid // Changed to UUID
   name            String
   messageTemplate String
-  status          CampaignStatus @default(DRAFT)
+  status          CampaignStatus @default(PROCESSING)
   audienceSize    Int            @default(0)
   sentCount       Int            @default(0)
   failedCount     Int            @default(0)
@@ -115,8 +111,8 @@ model CommunicationLog {
   campaignId String   @db.Uuid // Changed to UUID to match Campaign.id
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
-  customerId String   @db.Uuid // Correctly matches User.id type
-  customer   User     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId String @db.Uuid // Correctly matches User.id type
+  customer   User   @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([campaignId])
   @@index([customerId])

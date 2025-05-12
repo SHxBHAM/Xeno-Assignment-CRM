@@ -33,32 +33,32 @@ export async function RecentCampaigns() {
         const failed = campaign.communicationLogs.filter(log => log.status === "FAILED").length
 
         return (
-          <div key={campaign.id} className="border border-zinc-800 rounded-lg p-4">
-            <div className="flex justify-between items-start mb-2">
-              <div>
-                <h3 className="font-medium">{campaign.name}</h3>
+        <div key={campaign.id} className="border border-zinc-800 rounded-lg p-4">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <h3 className="font-medium">{campaign.name}</h3>
                 <p className="text-sm text-muted-foreground">
                   {formatDistanceToNow(campaign.createdAt, { addSuffix: true })}
                 </p>
-              </div>
+            </div>
               <Badge variant={campaign.status === "SENDING" ? "default" : "secondary"}>
                 {campaign.status}
               </Badge>
-            </div>
+          </div>
 
-            <div className="space-y-2 mt-4">
-              <div className="flex justify-between text-sm">
-                <span>Delivery Rate</span>
+          <div className="space-y-2 mt-4">
+            <div className="flex justify-between text-sm">
+              <span>Delivery Rate</span>
                 <span className="font-medium">
                   {totalSent > 0 ? Math.round((delivered / totalSent) * 100) : 0}%
                 </span>
-              </div>
+            </div>
               <Progress 
                 value={totalSent > 0 ? (delivered / totalSent) * 100 : 0} 
                 className="h-2" 
               />
 
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
                 <span>Sent: {totalSent}</span>
                 <span>Delivered: {delivered}</span>
                 <span>Failed: {failed}</span>
