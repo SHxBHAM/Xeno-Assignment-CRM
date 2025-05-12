@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RuleBuilder } from "@/components/rule-builder/rule-builder"
-import { AudiencePreview } from "@/components/campaigns/audience-preview"
+// import { AudiencePreview } from "@/components/campaigns/audience-preview"
 import { AIMessageSuggestions } from "@/components/ai/ai-message-suggestions"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
@@ -217,7 +217,7 @@ export function CampaignCreationForm() {
           </Tabs>
 
           <div className="mt-6">
-            <AudiencePreview audienceSize={audienceSize} />
+            {/* <AudiencePreview audienceSize={audienceSize} /> */}
           </div>
         </CardContent>
       </Card>

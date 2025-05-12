@@ -3,20 +3,27 @@
 import { useEffect, useState } from "react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
 
-export function CustomerSegments() {
+// Define colors for different campaign statuses
+const STATUS_COLORS = {
+  DRAFT: "#a3a3a3",      // Gray
+  SENDING: "#22c55e",    // Green
+  COMPLETED: "#3b82f6",  // Blue
+  FAILED: "#ef4444",     // Red
+  PROCESSING: "#f59e0b"  // Amber
+}
+
+type CampaignStatusData = {
+  name: string
+  value: number
+  color: string
+}
+
+export function CampaignStatusChart({ data }: { data: CampaignStatusData[] }) {
   const [mounted, setMounted] = useState(false)
 
-  // Avoid hydration mismatch with charts
   useEffect(() => {
     setMounted(true)
   }, [])
-
-  const data = [
-    { name: "High Value", value: 35, color: "#a3a3a3" },
-    { name: "Regular", value: 45, color: "#737373" },
-    { name: "Inactive", value: 15, color: "#404040" },
-    { name: "New", value: 5, color: "#262626" },
-  ]
 
   if (!mounted) {
     return (
@@ -38,7 +45,7 @@ export function CustomerSegments() {
             outerRadius={90}
             paddingAngle={2}
             dataKey="value"
-            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+            label={({ name, value }) => `${name} (${value})`}
             labelLine={false}
           >
             {data.map((entry, index) => (
@@ -46,10 +53,12 @@ export function CustomerSegments() {
             ))}
           </Pie>
           <Tooltip
-            formatter={(value) => [`${value}%`, "Percentage"]}
+            formatter={(value, name) => [`${value} campaigns`, name]}
             contentStyle={{ background: "#27272a", border: "none", borderRadius: "6px" }}
           />
-          <Legend />
+          <Legend 
+            formatter={(value) => value.charAt(0) + value.slice(1).toLowerCase()}
+          />
         </PieChart>
       </ResponsiveContainer>
     </div>

@@ -1,0 +1,124 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String             @id @default(uuid()) @db.Uuid
+  name              String
+  email             String             @unique
+  phone             String
+  address           Address?
+  createdAt         DateTime           @default(now())
+  Order             Order[]
+  communicationLogs CommunicationLog[]
+}
+
+model Address {
+  userId  String @id @db.Uuid // This is a one-to-one relation key, matching User.id type
+  street  String
+  city    String
+  state   String
+  zipCode String
+  country String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id          String   @id @default(uuid()) @db.Uuid
+  customerId  String   @db.Uuid
+  customer    User     @relation(fields: [customerId], references: [id])
+  items       Item[]
+  totalAmount Int
+  currency    String
+  status      String
+  createdAt   DateTime @default(now())
+
+  @@index([customerId])
+}
+
+model Item {
+  id        String @id @default(uuid()) @db.Uuid
+  orderId   String @db.Uuid
+  order     Order  @relation(fields: [orderId], references: [id])
+  productId String
+  name      String
+  price     Int
+  quantity  Int
+  total     Int
+}
+
+enum CampaignStatus {
+  DRAFT
+  PROCESSING
+  SENDING
+  COMPLETED
+  FAILED
+}
+
+enum CommunicationStatus {
+  PENDING
+  SENT
+  FAILED
+  DELIVERED
+}
+
+model Segment {
+  id              String     @id @default(uuid()) @db.Uuid // Changed to UUID
+  name            String
+  rules           Json
+  audienceUserIds String[] // These will be UUIDs from User.id
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  campaigns       Campaign[]
+
+  @@index([name])
+}
+
+model Campaign {
+  id              String         @id @default(uuid()) @db.Uuid // Changed to UUID
+  name            String
+  messageTemplate String
+  status          CampaignStatus @default(DRAFT)
+  audienceSize    Int            @default(0)
+  sentCount       Int            @default(0)
+  failedCount     Int            @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  segmentId String  @db.Uuid // Changed to UUID to match Segment.id
+  segment   Segment @relation(fields: [segmentId], references: [id])
+
+  communicationLogs CommunicationLog[]
+
+  @@index([segmentId])
+  @@index([status])
+}
+
+model CommunicationLog {
+  id                    String              @id @default(uuid()) @db.Uuid // Changed to UUID
+  personalizedMessage   String
+  status                CommunicationStatus @default(PENDING)
+  sentAt                DateTime?
+  vendorMessageId       String?
+  deliveryReceiptStatus String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  campaignId String   @db.Uuid // Changed to UUID to match Campaign.id
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  customerId String @db.Uuid // Correctly matches User.id type
+  customer   User   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([customerId])
+  @@index([status])
+}

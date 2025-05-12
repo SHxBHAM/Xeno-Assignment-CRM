@@ -1,9 +1,20 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { DashboardStats } from "@/components/dashboard/dashboard-stats"
 import { RecentCampaigns } from "@/components/dashboard/recent-campaigns"
-import { CustomerSegments } from "@/components/dashboard/customer-segments"
+import { CampaignStatusChart } from "@/components/dashboard/customer-segments"
+import { getCampaignStatusData } from "@/components/dashboard/campaign-status-data"
+import { Users } from "lucide-react"
+import prisma from "@/lib/prisma"
 
-export default function Dashboard() {
+async function getTotalCustomers() {
+  const count = await prisma.user.count()
+  return count
+}
+
+export default async function Dashboard() {
+  const totalCustomers = await getTotalCustomers()
+  const campaignStatusData = await getCampaignStatusData()
+
   return (
     <div className="space-y-6">
       <div>
@@ -28,11 +39,11 @@ export default function Dashboard() {
 
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>Customer Segments</CardTitle>
-            <CardDescription>Distribution of your customer segments</CardDescription>
+            <CardTitle>Campaign Status Distribution</CardTitle>
+            <CardDescription>Overview of campaign statuses</CardDescription>
           </CardHeader>
           <CardContent>
-            <CustomerSegments />
+            <CampaignStatusChart data={campaignStatusData} />
           </CardContent>
         </Card>
       </div>
