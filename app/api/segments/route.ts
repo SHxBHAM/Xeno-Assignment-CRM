@@ -1,104 +1,125 @@
-import { NextResponse } from "next/server"
-import prisma from "@/lib/prisma"
+import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient, User, Order, Address, Prisma } from "@prisma/client"; // Import Prisma types
+import { z } from "zod";
+import {
+  segmentRulesSchema,
+  SegmentRules,
+  Condition,
+} from "../../lib/segment-rules-schema"; // Adjust path
+import { subDays, isBefore, isAfter, isEqual, parseISO } from "date-fns";
+import {
+  UserAggregates, // If needed directly in the route, otherwise it's used by the imported functions
+  UserWithRelations,
+  calculateUserAggregates,
+  evaluateCondition, // Also likely used internally by evaluateUserAgainstRuleGroups
+  evaluateUserAgainstRuleGroups,
+} from "../../lib/segmentation-logic";
+const prisma = new PrismaClient();
 
-export async function POST(req: Request) {
+// --- Zod Schema for Create Segment ---
+const createSegmentSchema = z.object({
+  name: z.string().min(3, "Segment name must be at least 3 characters long."),
+  rules: segmentRulesSchema,
+});
+type CreateSegmentPayload = z.infer<typeof createSegmentSchema>;
+
+// --- API Route Handler for POST /api/segments ---
+export async function POST(request: NextRequest) {
   try {
-    const url = new URL(req.url)
-    const isPreview = url.pathname.endsWith('/preview')
-    const { name, rules } = await req.json()
+    const body = await request.json();
+    const validationResult = createSegmentSchema.safeParse(body);
 
-    // For preview, we only calculate audience size without saving
-    if (isPreview) {
-      // In a real implementation, this would calculate the actual audience size
-      // based on the rules. For now, we'll return a mock response
-      return NextResponse.json({
-        success: true,
-        data: {
-          audienceSize: 150,
-          sampleUserIds: ["user-1", "user-2", "user-3"] // Mock data
-        }
-      })
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid segment data provided.",
+          details: validationResult.error.flatten().fieldErrors,
+        },
+        { status: 400 }
+      );
     }
 
-    // Validate required fields for segment creation
-    if (!name?.trim() || name.length < 3) {
-      return NextResponse.json({
-        success: false,
-        error: "Segment name is required and must be at least 3 characters long"
-      }, { status: 400 })
-    }
+    const { name, rules } = validationResult.data;
+    const audienceUserIds: string[] = [];
 
-    if (!rules?.groups || !Array.isArray(rules.groups)) {
-      return NextResponse.json({
-        success: false,
-        error: "Valid segment rules are required"
-      }, { status: 400 })
-    }
+    // Fetch all users with their orders and address for segmentation
+    const usersFromDb = await prisma.user.findMany({
+      include: {
+        Order: true,
+        address: true,
+      },
+    });
+    const users: UserWithRelations[] = usersFromDb as UserWithRelations[];
 
-    // Create the segment
-    const segment = await prisma.segment.create({
-      data: {
-        name,
-        rules,
-        audienceUserIds: [] // Would be populated based on rules processing
+    for (const user of users) {
+      const aggregates = calculateUserAggregates(user);
+      if (evaluateUserAgainstRuleGroups(user, aggregates, rules)) {
+        audienceUserIds.push(user.id);
       }
-    })
+    }
 
-    return NextResponse.json({
-      success: true,
-      message: `Segment "${name}" created successfully.`,
-      data: segment
-    }, { status: 201 })
+    // Store the segment in the database
+    // The 'rules' field in Prisma Segment model is Json. Prisma handles serialization.
+    const newSegment = await prisma.segment.create({
+      data: {
+        name: name,
+        rules: rules as any, // Cast to 'any' or Prisma.JsonValue if type conflict
+        audienceUserIds: audienceUserIds,
+        // id will be auto-generated (UUID)
+      },
+    });
 
+    return NextResponse.json(
+      {
+        success: true,
+        message: `Segment "${newSegment.name}" created successfully with ${audienceUserIds.length} users.`,
+        data: newSegment,
+      },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error("Error creating segment:", error)
-    return NextResponse.json({
-      success: false,
-      error: "Failed to create segment"
-    }, { status: 500 })
+    console.error("Error creating segment:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred.";
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // Handle specific Prisma errors, e.g., unique constraint violation if segment names must be unique
+      if (error.code === "P2002") {
+        return NextResponse.json(
+          { success: false, error: "A segment with this name already exists." },
+          { status: 409 }
+        );
+      }
+    }
+    return NextResponse.json(
+      { success: false, error: errorMessage },
+      { status: 500 }
+    );
   }
 }
 
-export async function GET(req: Request) {
+// --- API Route Handler for GET /api/segments ---
+export async function GET(request: NextRequest) {
   try {
-    // Check if we're getting a specific segment
-    const url = new URL(req.url)
-    const segmentId = url.pathname.split('/').pop()
-    
-    if (segmentId && segmentId !== 'segments') {
-      const segment = await prisma.segment.findUnique({
-        where: { id: segmentId }
-      })
-
-      if (!segment) {
-        return NextResponse.json({
-          success: false,
-          error: "Segment not found"
-        }, { status: 404 })
-      }
-
-      return NextResponse.json({
-        success: true,
-        data: segment
-      })
-    }
-
-    // List all segments
     const segments = await prisma.segment.findMany({
       orderBy: {
-        createdAt: 'desc'
-      }
-    })
-    
+        createdAt: "desc", // Optional: order by creation date
+      },
+      // Optionally, you might want to select specific fields or include related data
+      // select: { id: true, name: true, createdAt: true, audienceUserIds: true } // Example
+    });
+
     return NextResponse.json({
       success: true,
-      data: segments
-    })
+      data: segments,
+    });
   } catch (error) {
-    console.error("Error fetching segments:", error)
-    return NextResponse.json({
-      success: false,
-      error: "Failed to fetch segments"
-    }, { status: 500 })
+    console.error("Error fetching segments:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "An unexpected error occurred.";
+    return NextResponse.json(
+      { success: false, error: errorMessage },
+      { status: 500 }
+    );
   }
-} 
+}

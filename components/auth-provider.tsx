@@ -22,12 +22,19 @@ function AuthProviderContent({ children }: { children: ReactNode }) {
   const isAuthenticated = !!user
 
   const login = () => {
-    const callbackUrl = searchParams.get("callbackUrl") || "/"
-    signIn("google", { callbackUrl })
+    // Get the callback URL from the search params, default to dashboard
+    const callbackUrl = searchParams.get("callbackUrl") || "/campaigns"
+    signIn("google", { 
+      callbackUrl,
+      redirect: true,
+    })
   }
 
   const logout = () => {
-    signOut({ callbackUrl: "/login" })
+    signOut({ 
+      callbackUrl: "/login",
+      redirect: true,
+    })
   }
 
   return (
