@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { BarChart3, Home, LayoutDashboard, MessageSquare, PlusCircle, Settings, Users } from "lucide-react"
+import { LayoutDashboard, MessageSquare, PlusCircle, Users } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 
 const routes = [
@@ -21,26 +21,6 @@ const routes = [
     label: "Create Campaign",
     icon: PlusCircle,
     href: "/campaigns/create",
-  },
-  {
-    label: "Customers",
-    icon: Users,
-    href: "/customers",
-  },
-  {
-    label: "Analytics",
-    icon: BarChart3,
-    href: "/analytics",
-  },
-  {
-    label: "API Docs",
-    icon: Home,
-    href: "/api-docs",
-  },
-  {
-    label: "Settings",
-    icon: Settings,
-    href: "/settings",
   },
 ]
 
