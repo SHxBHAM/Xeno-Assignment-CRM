@@ -37,7 +37,6 @@ export async function CampaignList() {
             <TableHead>Status</TableHead>
             <TableHead>Audience</TableHead>
             <TableHead className="text-right">Sent</TableHead>
-            <TableHead className="text-right">Delivered</TableHead>
             <TableHead className="text-right">Failed</TableHead>
             {/* <TableHead className="text-right">Actions</TableHead> */}
           </TableRow>
@@ -59,7 +58,6 @@ export async function CampaignList() {
                 </TableCell>
                 <TableCell>{campaign.segment.name}</TableCell>
                 <TableCell className="text-right">{totalSent}</TableCell>
-                <TableCell className="text-right">{delivered}</TableCell>
                 <TableCell className="text-right">{failed}</TableCell>
               </TableRow>
             )
