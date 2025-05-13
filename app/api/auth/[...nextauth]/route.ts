@@ -1,7 +1,7 @@
-import NextAuth from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
-import type { NextAuthOptions } from "next-auth"
-import type { NextRequest } from "next/server"
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import type { NextAuthOptions } from "next-auth";
+import type { NextRequest } from "next/server";
 
 type UserType = {
   name?: string | null;
@@ -32,18 +32,18 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
       // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url
-      return baseUrl
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
     },
   },
   pages: {
-    signIn: '/login',
-    signOut: '/login',
-    error: '/login', // Error code passed in query string as ?error=
+    signIn: "/login",
+    signOut: "/login",
+    error: "/login", // Error code passed in query string as ?error=
   },
-}
+};
 
-const handler = NextAuth(authOptions)
-export { handler as GET, handler as POST } 
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };

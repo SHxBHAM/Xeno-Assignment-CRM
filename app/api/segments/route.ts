@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
           error: "Invalid segment data provided.",
           details: validationResult.error.flatten().fieldErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         message: `Segment "${newSegment.name}" created successfully with ${audienceUserIds.length} users.`,
         data: newSegment,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Error creating segment:", error);
@@ -87,13 +87,13 @@ export async function POST(request: NextRequest) {
       if (error.code === "P2002") {
         return NextResponse.json(
           { success: false, error: "A segment with this name already exists." },
-          { status: 409 }
+          { status: 409 },
         );
       }
     }
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
       error instanceof Error ? error.message : "An unexpected error occurred.";
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

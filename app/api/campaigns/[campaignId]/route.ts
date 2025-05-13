@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     if (!campaignId) {
       return NextResponse.json(
         { success: false, error: "Campaign ID is required." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     if (!uuidRegex.test(campaignId)) {
       return NextResponse.json(
         { success: false, error: "Invalid Campaign ID format." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     if (!campaign) {
       return NextResponse.json(
         { success: false, error: "Campaign not found." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -67,13 +67,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
   } catch (error) {
     console.error(
       `Error fetching campaign with ID ${context.params.campaignId}:`,
-      error
+      error,
     );
     const errorMessage =
       error instanceof Error ? error.message : "An unexpected error occurred.";
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

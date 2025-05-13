@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     if (!segmentId) {
       return NextResponse.json(
         { success: false, error: "Segment ID is required." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     if (!uuidRegex.test(segmentId)) {
       return NextResponse.json(
         { success: false, error: "Invalid Segment ID format." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     if (!segment) {
       return NextResponse.json(
         { success: false, error: "Segment not found." },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -52,13 +52,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
   } catch (error) {
     console.error(
       `Error fetching segment with ID ${context.params.segmentId}:`,
-      error
+      error,
     );
     const errorMessage =
       error instanceof Error ? error.message : "An unexpected error occurred.";
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

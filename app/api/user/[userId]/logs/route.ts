@@ -5,13 +5,13 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: { userId: string } },
 ) {
   const { userId } = params;
   if (!userId) {
     return NextResponse.json(
       { success: false, message: "Missing userId." },
-      { status: 400 }
+      { status: 400 },
     );
   }
   try {
@@ -24,7 +24,7 @@ export async function GET(
     console.error("Error fetching user logs:", err);
     return NextResponse.json(
       { success: false, message: "Internal server error." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

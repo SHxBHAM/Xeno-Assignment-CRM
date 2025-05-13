@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server"
-import { geminiPro } from "@/lib/gemini"
+import { NextResponse } from "next/server";
+import { geminiPro } from "@/lib/gemini";
 
 export async function POST(req: Request) {
   try {
-    const { objective, tone, context } = await req.json()
+    const { objective, tone, context } = await req.json();
 
     const prompt = `Generate a marketing message for a CRM campaign with the following parameters:
 Objective: ${objective}
@@ -17,18 +17,18 @@ The message should:
 4. Match the specified tone
 5. Be relevant to the objective
 
-Generate the message in a natural, conversational style.`
+Generate the message in a natural, conversational style.`;
 
-    const result = await geminiPro.generateContent(prompt)
-    const response = await result.response
-    const message = response.text()
+    const result = await geminiPro.generateContent(prompt);
+    const response = await result.response;
+    const message = response.text();
 
-    return NextResponse.json({ message })
+    return NextResponse.json({ message });
   } catch (error) {
-    console.error("Error generating message:", error)
+    console.error("Error generating message:", error);
     return NextResponse.json(
       { error: "Failed to generate message" },
-      { status: 500 }
-    )
+      { status: 500 },
+    );
   }
-} 
+}

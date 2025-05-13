@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
           error: "Invalid campaign and segment data provided.",
           details: validationResult.error.flatten().fieldErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         campaignId: newCampaign.id,
       });
       console.log(
-        `Campaign ${newCampaign.id} added to process-campaign queue.`
+        `Campaign ${newCampaign.id} added to process-campaign queue.`,
       );
     }
 
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
           campaign: newCampaign,
         },
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Error creating campaign and segment:", error);
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         errorMessage = `Failed to create segment or campaign due to a unique constraint violation. Field: ${error.meta?.target}`;
         return NextResponse.json(
           { success: false, error: errorMessage, details: error.meta },
-          { status: 409 }
+          { status: 409 },
         );
       }
       // Potentially other Prisma errors like foreign key if segment creation failed in an unexpected way before campaign creation
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -120,24 +120,80 @@ export async function GET(request: NextRequest) {
   try {
     const campaigns = await prisma.campaign.findMany({
       orderBy: {
-        createdAt: "desc", // Order by creation date, newest first
+        createdAt: "desc",
       },
       include: {
         segment: {
           select: {
-            name: true, // Include the name of the associated segment
+            name: true,
           },
         },
       },
     });
 
+    // For PROCESSING campaigns, get live status counts from communicationLog
+    const processingCampaigns = campaigns.filter(
+      (c) => c.status === "PROCESSING"
+    );
+    let logCounts: Record<
+      string,
+      { sent: number; delivered: number; failed: number; pending: number }
+    > = {};
+    if (processingCampaigns.length > 0) {
+      const allCounts = await Promise.all(
+        processingCampaigns.map(async (c) => {
+          const [sent, delivered, failed, pending] = await Promise.all([
+            prisma.communicationLog.count({
+              where: { campaignId: c.id, status: "SENT" },
+            }),
+            prisma.communicationLog.count({
+              where: { campaignId: c.id, status: "DELIVERED" },
+            }),
+            prisma.communicationLog.count({
+              where: { campaignId: c.id, status: "FAILED" },
+            }),
+            prisma.communicationLog.count({
+              where: { campaignId: c.id, status: "PENDING" },
+            }),
+          ]);
+          return { id: c.id, sent, delivered, failed, pending };
+        })
+      );
+      logCounts = Object.fromEntries(
+        allCounts.map((x) => [
+          x.id,
+          {
+            sent: x.sent,
+            delivered: x.delivered,
+            failed: x.failed,
+            pending: x.pending,
+          },
+        ])
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      data: campaigns.map((campaign) => ({
-        ...campaign,
-        segmentName: campaign.segment.name, // Flatten segment name for easier access
-        // segment: undefined, // Remove the nested segment object if you only want the name
-      })),
+      data: campaigns.map((campaign) => {
+        let sentCount = campaign.sentCount;
+        let failedCount = campaign.failedCount;
+        let deliveredCount = 0;
+        let pendingCount = 0;
+        if (campaign.status === "PROCESSING" && logCounts[campaign.id]) {
+          sentCount = logCounts[campaign.id].sent;
+          failedCount = logCounts[campaign.id].failed;
+          deliveredCount = logCounts[campaign.id].delivered;
+          pendingCount = logCounts[campaign.id].pending;
+        }
+        return {
+          ...campaign,
+          sentCount,
+          failedCount,
+          deliveredCount,
+          pendingCount,
+          segmentName: campaign.segment.name,
+        };
+      }),
     });
   } catch (error) {
     console.error("Error fetching campaigns:", error);
@@ -145,7 +201,7 @@ export async function GET(request: NextRequest) {
       error instanceof Error ? error.message : "An unexpected error occurred.";
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

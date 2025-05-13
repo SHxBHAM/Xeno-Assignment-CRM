@@ -1,12 +1,12 @@
-import { withAuth } from "next-auth/middleware"
-import { NextResponse } from "next/server"
+import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
 
 export default withAuth(
   function middleware(req) {
     // If the user is not authenticated and trying to access a protected route,
     // redirect them to the login page
     if (!req.nextauth.token) {
-      return NextResponse.redirect(new URL("/login", req.url))
+      return NextResponse.redirect(new URL("/login", req.url));
     }
   },
   {
@@ -14,9 +14,9 @@ export default withAuth(
       authorized: ({ token }) => !!token,
     },
   }
-)
+);
 
-// Protect all routes except login and auth API routes
+// Protect all routes except login and all API routes
 export const config = {
   matcher: ["/((?!login|api/auth).*)"],
-} 
+};

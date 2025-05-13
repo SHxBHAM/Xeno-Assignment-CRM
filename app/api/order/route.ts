@@ -67,7 +67,7 @@ export async function POST(request: Request) {
           error: "Invalid order data provided.",
           details: validationResult.error.flatten().fieldErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
       console.error("Order queue is not initialized.");
       return Response.json(
         { success: false, error: "Order processing system is not ready." },
-        { status: 503 }
+        { status: 503 },
       );
     }
     await orderQueue.addBulk(jobs);
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
             ? error.message
             : "An unexpected error occurred.",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

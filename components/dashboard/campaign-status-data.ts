@@ -1,28 +1,28 @@
-import { CampaignStatus } from "@prisma/client"
-import prisma from "@/lib/prisma"
+import { CampaignStatus } from "@prisma/client";
+import prisma from "@/lib/prisma";
 
 type CampaignStatusCount = {
-  name: CampaignStatus
-  value: number
-  color: string
-}
+  name: CampaignStatus;
+  value: number;
+  color: string;
+};
 
 const STATUS_COLORS: Record<CampaignStatus, string> = {
-  PROCESSING: "#3b82f6",  // Blue 500 - Active processing
-  COMPLETED: "#1d4ed8",   // Blue 700 - Completed
-}
+  PROCESSING: "#f6b21b", // mid yellow
+  COMPLETED: "#5393e3", // mid blue
+};
 
 export async function getCampaignStatusData(): Promise<CampaignStatusCount[]> {
   const campaigns = await prisma.campaign.groupBy({
-    by: ['status'],
+    by: ["status"],
     _count: {
-      status: true
-    }
-  })
+      status: true,
+    },
+  });
 
-  return campaigns.map(item => ({
+  return campaigns.map((item) => ({
     name: item.status,
     value: item._count.status,
-    color: STATUS_COLORS[item.status]
-  }))
-} 
+    color: STATUS_COLORS[item.status],
+  }));
+}

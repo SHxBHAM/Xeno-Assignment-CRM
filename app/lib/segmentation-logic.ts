@@ -18,7 +18,7 @@ export type UserWithRelations = User & {
 // --- Helper Functions ---
 
 export function calculateUserAggregates(
-  user: UserWithRelations
+  user: UserWithRelations,
 ): UserAggregates {
   // function calculateUserAggregates(user_from_prisma_with_included_Orders):
   //   initialize totalSpend = 0
@@ -47,7 +47,7 @@ export function calculateUserAggregates(
 export function evaluateCondition(
   user: UserWithRelations,
   aggregates: UserAggregates,
-  condition: Condition
+  condition: Condition,
 ): boolean {
   // function evaluateCondition(user_from_prisma_with_included_Address, calculated_user_aggregates, condition_to_evaluate):
   //   extract field, operator, value from condition_to_evaluate
@@ -98,6 +98,11 @@ export function evaluateCondition(
       return false;
   }
 
+  // Strict null/undefined check for all types (date, number, string, etc.)
+  if (userValue === null || userValue === undefined) {
+    return false;
+  }
+
   //   handle "isEmpty" / "isNotEmpty" operators:
   //     if operator is "isEmpty", return true if actual_user_value is null, undefined, or an empty string.
   if (operator === "isEmpty") {
@@ -134,7 +139,7 @@ export function evaluateCondition(
           comparisonDate = parseISO(String(value));
           return isEqual(
             dateUserValue.setHours(0, 0, 0, 0),
-            comparisonDate.setHours(0, 0, 0, 0)
+            comparisonDate.setHours(0, 0, 0, 0),
           ); // Compare date part only
         case "beforeDate":
           comparisonDate = parseISO(String(value));
@@ -144,14 +149,14 @@ export function evaluateCondition(
           return isAfter(dateUserValue, comparisonDate);
         default:
           console.warn(
-            `evaluateCondition: Unhandled date operator "${operator}" for field "${field}"`
+            `evaluateCondition: Unhandled date operator "${operator}" for field "${field}"`,
           );
           return false;
       }
     } catch (e) {
       console.error(
         `Date parsing/comparison error for operator ${operator}, value ${value}:`,
-        e
+        e,
       );
       return false;
     }
@@ -181,7 +186,7 @@ export function evaluateCondition(
         return numericUserValue <= numericConditionValue;
       default:
         console.warn(
-          `evaluateCondition: Unhandled numeric operator "${operator}" for field "${field}"`
+          `evaluateCondition: Unhandled numeric operator "${operator}" for field "${field}"`,
         );
         return false;
     }
@@ -213,7 +218,7 @@ export function evaluateCondition(
         return stringUserValue.endsWith(stringConditionValue);
       default:
         console.warn(
-          `evaluateCondition: Unhandled string operator "${operator}" for field "${field}"`
+          `evaluateCondition: Unhandled string operator "${operator}" for field "${field}"`,
         );
         return false;
     }
@@ -221,7 +226,7 @@ export function evaluateCondition(
 
   //   log warning for unhandled operator/field combination and return false
   console.warn(
-    `evaluateCondition: Unhandled operator "${operator}" for field "${field}" or type mismatch. User value: ${userValue} (type: ${typeof userValue}), Condition value: ${value} (type: ${typeof value})`
+    `evaluateCondition: Unhandled operator "${operator}" for field "${field}" or type mismatch. User value: ${userValue} (type: ${typeof userValue}), Condition value: ${value} (type: ${typeof value})`,
   );
   return false;
 }
@@ -229,7 +234,7 @@ export function evaluateCondition(
 export function evaluateUserAgainstRuleGroups(
   user: UserWithRelations,
   aggregates: UserAggregates,
-  rules: SegmentRules
+  rules: SegmentRules,
 ): boolean {
   // function evaluateUserAgainstRuleGroups(user_from_prisma_with_included_Address, calculated_user_aggregates, segment_rules):
   //   if segment_rules.groups is empty:

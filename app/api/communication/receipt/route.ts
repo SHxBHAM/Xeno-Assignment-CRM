@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     if (!campaignId || !customerId || !vendorMessageId || !status) {
       return NextResponse.json(
         { success: false, message: "Missing required fields." },
-        { status: 400 }
+        { status: 400 },
       );
     }
     // Update the CommunicationLog entry
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     if (updated.count === 0) {
       return NextResponse.json(
         { success: false, message: "Log not found." },
-        { status: 404 }
+        { status: 404 },
       );
     }
     return NextResponse.json({ success: true });
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     console.error("Delivery Receipt API error:", err);
     return NextResponse.json(
       { success: false, message: "Internal server error." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

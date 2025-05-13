@@ -1,46 +1,20 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { usePathname } from "next/navigation"
-import { Sidebar } from "@/components/sidebar"
-import { Header } from "@/components/header"
-import { useAuth } from "@/components/auth-provider"
+import { Sidebar } from "@/components/sidebar";
+import { Header } from "@/components/header";
 
-export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth()
-  const pathname = usePathname()
-
-  // Don't render layout on login page
-  if (pathname === "/login") {
-    return <>{children}</>
-  }
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-zinc-950">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-400 mb-4"></div>
-          <p className="text-zinc-400">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Only render the layout if authenticated
-  if (isAuthenticated) {
-    return (
-      <div className="flex min-h-screen">
-        <Sidebar />
-        <div className="flex-1 flex flex-col pl-[240px]">
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen flex bg-zinc-950 text-white">
+      <Sidebar />
+      <main className="flex-1 ml-[240px] p-6 bg-zinc-950">
+        <header className="mb-8">
           <Header />
-          <main className="flex-1 p-6">{children}</main>
-        </div>
-      </div>
-    )
-  }
-
-  // Fallback, should not reach here due to redirects in AuthProvider
-  return <>{children}</>
+        </header>
+        <div className="max-w-7xl mx-auto w-full">{children}</div>
+      </main>
+    </div>
+  );
 }

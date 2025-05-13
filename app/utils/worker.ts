@@ -251,7 +251,7 @@ const campaignWorker = new Worker(
   },
   {
     connection: redisConnection,
-    concurrency: 1, // Process one campaign at a time
+    concurrency: 10, // Process one campaign at a time
   }
 );
 
@@ -289,4 +289,4 @@ process.on("SIGTERM", async () => {
   await campaignWorker.close(); // Add campaign worker to graceful shutdown
 });
 
-console.log("Worker processes started with rate limit: 1 job every 5 seconds");
+console.log("Worker processes started");

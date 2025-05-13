@@ -46,7 +46,7 @@ export async function POST(request: Request) {
           error: "Invalid user data provided.",
           details: validationResult.error.flatten().fieldErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
             ? error.message
             : "An unexpected error occurred.",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

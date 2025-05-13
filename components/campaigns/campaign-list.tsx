@@ -1,34 +1,37 @@
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Eye, BarChart3 } from "lucide-react"
-import prisma from "@/lib/prisma"
-import { formatDistanceToNow } from "date-fns"
-import Link from "next/link"
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Eye, BarChart3, RefreshCw } from "lucide-react";
+import prisma from "@/lib/prisma";
+import { formatDistanceToNow } from "date-fns";
+import Link from "next/link";
+import { revalidatePath } from "next/cache";
 
 async function getCampaigns() {
-  const campaigns = await prisma.campaign.findMany({
-    orderBy: {
-      createdAt: "desc"
-    },
-    include: {
-      segment: true,
-      communicationLogs: {
-        select: {
-          status: true
-        }
-      }
-    }
-  })
-
-  return campaigns
+  const res = await fetch("https://xeno-assignment-crm.vercel.app/api/campaigns", {
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch campaigns");
+  const json = await res.json();
+  return json.data;
 }
 
-export async function CampaignList() {
-  const campaigns = await getCampaigns()
+export async function CampaignList({ refresh }: { refresh?: boolean } = {}) {
+  // If refresh is requested, revalidate the path to force fresh data
+  if (refresh) {
+    revalidatePath("/campaigns");
+  }
+  const campaigns = await getCampaigns();
 
   return (
-    <div className="border border-zinc-800 rounded-lg">
+    <div className="border border-zinc-800 rounded-lg bg-zinc-900">
       <Table>
         <TableHeader>
           <TableRow>
@@ -38,32 +41,51 @@ export async function CampaignList() {
             <TableHead>Audience</TableHead>
             <TableHead className="text-right">Sent</TableHead>
             <TableHead className="text-right">Failed</TableHead>
-            {/* <TableHead className="text-right">Actions</TableHead> */}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {campaigns.map((campaign) => {
-            const totalSent = campaign.communicationLogs.length
-            const delivered = campaign.communicationLogs.filter(log => log.status === "DELIVERED").length
-            const failed = campaign.communicationLogs.filter(log => log.status === "FAILED").length
-
-            return (
-              <TableRow key={campaign.id}>
-                <TableCell className="font-medium">{campaign.name}</TableCell>
-                <TableCell>{formatDistanceToNow(campaign.createdAt, { addSuffix: true })}</TableCell>
-                <TableCell>
-                  <Badge variant={campaign.status === "SENDING" ? "outline" : "secondary"}>
-                    {campaign.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>{campaign.segment.name}</TableCell>
-                <TableCell className="text-right">{totalSent}</TableCell>
-                <TableCell className="text-right">{failed}</TableCell>
-              </TableRow>
-            )
-          })}
+          {campaigns.map((campaign: any) => (
+            <TableRow
+              key={campaign.id}
+              className="hover:bg-zinc-800 transition-colors"
+            >
+              <TableCell className="font-medium text-white">
+                {campaign.name}
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {formatDistanceToNow(new Date(campaign.createdAt), {
+                  addSuffix: true,
+                })}
+              </TableCell>
+              <TableCell>
+                <Badge
+                  variant={
+                    campaign.status === "SENDING" ? "outline" : "secondary"
+                  }
+                  className={
+                    campaign.status === "COMPLETED"
+                      ? "bg-blue-500 text-white border-none"
+                      : campaign.status === "PROCESSING"
+                      ? "bg-amber-500 text-white border-none"
+                      : ""
+                  }
+                >
+                  {campaign.status}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {campaign.segmentName || campaign.segment?.name || "-"}
+              </TableCell>
+              <TableCell className="text-right text-blue-400 font-semibold">
+                {campaign.sentCount}
+              </TableCell>
+              <TableCell className="text-right text-red-400 font-semibold">
+                {campaign.failedCount}
+              </TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }

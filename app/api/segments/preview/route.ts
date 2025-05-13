@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
           error: "Invalid segment rule data provided.",
           details: validationResult.error.flatten().fieldErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       error instanceof Error ? error.message : "An unexpected error occurred.";
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

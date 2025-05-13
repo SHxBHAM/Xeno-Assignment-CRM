@@ -5,13 +5,13 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: { campaignId: string } },
 ) {
   const { campaignId } = params;
   if (!campaignId) {
     return NextResponse.json(
       { success: false, message: "Missing campaignId." },
-      { status: 400 }
+      { status: 400 },
     );
   }
   try {
@@ -24,7 +24,7 @@ export async function GET(
     console.error("Error fetching campaign logs:", err);
     return NextResponse.json(
       { success: false, message: "Internal server error." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

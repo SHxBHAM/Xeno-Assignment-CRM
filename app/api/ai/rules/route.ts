@@ -1,18 +1,18 @@
-import { NextResponse } from "next/server"
-import { generateStructuredResponse, isRuleGroup } from "@/lib/gemini"
+import { NextResponse } from "next/server";
+import { generateStructuredResponse, isRuleGroup } from "@/lib/gemini";
 
 export async function POST(req: Request) {
   try {
-    const { description } = await req.json()
+    const { description } = await req.json();
 
     if (!description || typeof description !== "string") {
       return NextResponse.json(
         { error: "Description is required and must be a string" },
-        { status: 400 }
-      )
+        { status: 400 },
+      );
     }
 
-    console.log("Converting description to rules:", description)
+    console.log("Converting description to rules:", description);
 
     const prompt = `You are a CRM rule converter. Convert this description into a rule group: "${description}"
 
@@ -56,21 +56,24 @@ Example valid response:
       "value": "5000"
     }
   ]
-}`
+}`;
 
-    const rules = await generateStructuredResponse(prompt, isRuleGroup)
-    console.log("Generated rules:", rules)
+    const rules = await generateStructuredResponse(prompt, isRuleGroup);
+    console.log("Generated rules:", rules);
 
     // Double-check the structure before sending
     if (!isRuleGroup(rules)) {
-      console.error("Invalid rule structure:", rules)
-      throw new Error("Generated rules do not match required structure")
+      console.error("Invalid rule structure:", rules);
+      throw new Error("Generated rules do not match required structure");
     }
 
-    return NextResponse.json(rules)
+    return NextResponse.json(rules);
   } catch (error) {
-    console.error("Error converting to rules:", error)
-    const errorMessage = error instanceof Error ? error.message : "Failed to convert description to rules"
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
+    console.error("Error converting to rules:", error);
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Failed to convert description to rules";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
-} 
+}

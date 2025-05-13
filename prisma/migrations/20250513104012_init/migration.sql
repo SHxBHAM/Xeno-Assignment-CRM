@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "CampaignStatus" AS ENUM ('DRAFT', 'PROCESSING', 'SENDING', 'COMPLETED', 'FAILED');
+CREATE TYPE "CampaignStatus" AS ENUM ('PROCESSING', 'COMPLETED');
 
 -- CreateEnum
 CREATE TYPE "CommunicationStatus" AS ENUM ('PENDING', 'SENT', 'FAILED', 'DELIVERED');
@@ -69,7 +69,7 @@ CREATE TABLE "Campaign" (
     "id" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "messageTemplate" TEXT NOT NULL,
-    "status" "CampaignStatus" NOT NULL DEFAULT 'DRAFT',
+    "status" "CampaignStatus" NOT NULL DEFAULT 'PROCESSING',
     "audienceSize" INTEGER NOT NULL DEFAULT 0,
     "sentCount" INTEGER NOT NULL DEFAULT 0,
     "failedCount" INTEGER NOT NULL DEFAULT 0,
