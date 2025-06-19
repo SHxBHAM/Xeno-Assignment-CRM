@@ -8,7 +8,7 @@ import ClientProviders from "@/components/client-providers"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "Xeno CRM Platform",
+  title: "CRM Platform",
   description: "A modern CRM platform for customer segmentation and campaign management",
   generator: 'v0.dev'
 }

@@ -28,7 +28,7 @@ function LoginContent() {
   return (
     <Card className="w-full max-w-md mx-4">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-2xl">Xeno CRM Platform</CardTitle>
+        <CardTitle className="text-2xl">CRM Platform</CardTitle>
         <CardDescription>Sign in to access your CRM dashboard</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
